@@ -1,0 +1,87 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Женя выпил кофе</title>
+
+    <link rel="stylesheet" href="//unpkg.com/leaflet@1.5.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="./styles/coffeemap.css" />
+
+    <script src="//yastatic.net/jquery/3.3.1/jquery.min.js"></script>
+    <script src="//unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
+
+</head>
+
+<body>
+    <div class="coffee-map-title">Женя выпил кофе</div>
+    <div class="coffee-map" id="mapid"></div>
+
+    <script type="text/javascript">
+
+        function getPopupText(coffee) {
+            if (coffee['farm-url']) {
+                var farmUrl = `<a href='${coffee['farm-url']}' target='_blank'>${coffee['farm']}</a>`;
+            } else {
+                var farmUrl = `${coffee['farm']}`;
+            };
+
+            return `<div class='coffee-card'>
+                        <img class='coffee-card-image' src='${coffee['cover-url']}'/>
+                        <div class='coffee-card-text'>
+                            <span class='coffee-card-text-title'><a href='${coffee['url']}' target='_blank'>${coffee['title']}</a> · ${coffee['rating']}★</span>
+                            <div class='coffee-card-text-params'>
+                                <div class="kv-item">${coffee['country']}, ${coffee['region']}</div>
+                                <div class="kv-item">Кофе: ${coffee['coffee-tree']}</div>
+                                <div class="kv-item">Ферма: ${farmUrl}</div>
+                            </div>
+                        </div>
+                    </div>`;
+        }
+
+        const coffeeIcon = L.Icon.extend({
+            options: {
+                iconSize: [32, 43],
+                iconAnchor: [16, 21],
+                popupAnchor: [0, -21],
+                iconUrl: './icons/coffee.svg' 
+            },
+        });
+
+        var mymap = L.map('mapid').setView([25.505, 15.09], 3);
+
+        L.tileLayer('https://a.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="//www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors | Used icons <a href="/sergeychikin.ru/365" target="_blank">by Sergey Chikin</a>',
+            minZoom: 2,
+            maxZoom: 16,
+        }).addTo(mymap);
+
+        var sheetUrl = 'https://spreadsheets.google.com/feeds/list/1sItPU8FntP6yYRWWPImqZv_qXJRA8JAAMcGe3GH7NXI/1/public/full?alt=json';
+
+        $.getJSON(sheetUrl, function (data) {
+            var entry = data.feed.entry;
+            entry.forEach(function (entryItem, i, arr) {
+                var coffeeItem = {}
+                coffeeItem['country']          = entryItem['gsx$country']['$t']
+                coffeeItem['region']           = entryItem['gsx$region']['$t']
+                coffeeItem['title']            = entryItem['gsx$title']['$t']
+                coffeeItem['coffee-tree']      = entryItem['gsx$coffee-tree']['$t']
+                coffeeItem['rating']           = entryItem['gsx$rating']['$t']
+                coffeeItem['farm']             = entryItem['gsx$farm']['$t']
+                coffeeItem['farm-url']         = entryItem['gsx$farm-url']['$t']
+                coffeeItem['lat']              = entryItem['gsx$lat']['$t']
+                coffeeItem['lon']              = entryItem['gsx$lon']['$t']
+                coffeeItem['cover-url']        = entryItem['gsx$cover-url']['$t']
+                
+                //console.log(coffeeItem);
+
+                var markerIcon = new coffeeIcon();
+                var marker = L.marker([coffeeItem.lat, coffeeItem.lon], { icon: markerIcon }).addTo(mymap);
+                marker.bindPopup(getPopupText(coffeeItem));
+            }
+            );
+        });
+
+    </script>
+</body>
+
+</html>
